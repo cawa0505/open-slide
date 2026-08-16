@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { realpathSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
@@ -156,9 +157,14 @@ export async function main(): Promise<void> {
   await server.connect(transport);
 }
 
-const isEntry =
-  process.argv[1] !== undefined && fileURLToPath(import.meta.url) === path.resolve(process.argv[1]);
-if (isEntry) {
+export function isEntryPoint(moduleUrl: string, entryPath: string | undefined): boolean {
+  return (
+    entryPath !== undefined &&
+    realpathSync(fileURLToPath(moduleUrl)) === realpathSync(path.resolve(entryPath))
+  );
+}
+
+if (isEntryPoint(import.meta.url, process.argv[1])) {
   main().catch((error) => {
     console.error(error);
     process.exit(1);

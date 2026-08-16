@@ -21,21 +21,21 @@ Expose slide automation to any MCP client (Claude Code, Cursor, …) via stdio.
 
 ### Configure
 
-Build the server first, then point your MCP client at it:
+Build and install the CLI:
 
 ```bash
 git clone https://github.com/cawa0505/open-slide.git
 cd open-slide
 pnpm install
 pnpm build
+pnpm mcp:install
 ```
 
 ```json
 {
   "mcpServers": {
     "open-slide": {
-      "command": "node",
-      "args": ["/absolute/path/to/open-slide/packages/mcp/dist/index.js"]
+      "command": "open-slide-mcp"
     }
   }
 }
@@ -47,14 +47,6 @@ pnpm build
 2. agent writes slides in `slides/<id>/index.tsx`
 3. `open_slide_build` — verify the build
 4. `open_slide_export_html` — produce a shareable single-file export
-
-### From source
-
-```bash
-pnpm install
-pnpm build
-node packages/mcp/dist/index.js
-```
 
 ---
 

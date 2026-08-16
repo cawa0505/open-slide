@@ -13,14 +13,21 @@ MCP server for [open-slide](https://open-slide.dev) — lets Claude (or any MCP 
 
 ## Usage
 
-Run `npx open-slide-mcp` (stdio transport). Example MCP client config:
+From the repository root, build and install the CLI:
+
+```bash
+pnpm install
+pnpm build
+pnpm mcp:install
+```
+
+Then configure the stdio transport:
 
 ```json
 {
   "mcpServers": {
     "open-slide": {
-      "command": "npx",
-      "args": ["open-slide-mcp"]
+      "command": "open-slide-mcp"
     }
   }
 }

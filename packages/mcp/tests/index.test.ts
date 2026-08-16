@@ -1,10 +1,10 @@
-import { mkdtemp, readdir, rm } from 'node:fs/promises';
+import { mkdtemp, readdir, rm, symlink, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import { describe, expect, it } from 'vitest';
-import { createServer } from '../src/index.ts';
+import { createServer, isEntryPoint } from '../src/index.ts';
 
 async function connect(): Promise<Client> {
   const client = new Client({ name: 'test-client', version: '0.0.1' });
@@ -14,6 +14,19 @@ async function connect(): Promise<Client> {
 }
 
 describe('open-slide MCP server', () => {
+  it('recognizes a symlinked CLI entry point', async () => {
+    const dir = await mkdtemp(path.join(os.tmpdir(), 'open-slide-mcp-entry-'));
+    try {
+      const entry = path.join(dir, 'index.js');
+      const link = path.join(dir, 'open-slide-mcp');
+      await writeFile(entry, '');
+      await symlink(entry, link);
+      expect(isEntryPoint(new URL(`file://${entry}`).href, link)).toBe(true);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
   it('registers all four tools', async () => {
     const client = await connect();
     const { tools } = await client.listTools();

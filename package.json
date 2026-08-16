@@ -8,6 +8,7 @@
     "dev:web": "turbo run dev --filter=web",
     "dev:demo": "turbo run dev --filter=demo",
     "build": "turbo run build",
+    "mcp:install": "pnpm --dir packages/mcp link --global",
     "typecheck": "turbo run typecheck",
     "format": "biome format --write .",
     "format:check": "biome format .",
