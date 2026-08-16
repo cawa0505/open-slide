@@ -2,10 +2,12 @@ import { createHash } from 'node:crypto';
 import { existsSync } from 'node:fs';
 import { cp, lstat, mkdir, readdir, readFile, readlink, rm, symlink } from 'node:fs/promises';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import chalk from 'chalk';
 
 export interface SyncSkillsOptions {
   dryRun?: boolean;
+  cwd?: string;
 }
 
 export type Status = 'added' | 'updated' | 'unchanged';
@@ -15,10 +17,18 @@ export interface DriftEntry {
   status: Status;
 }
 
-export async function detectSkillsDrift(skillsDir: string): Promise<DriftEntry[]> {
+export function resolveBuiltinSkillsDir(): string {
+  // dist/cli/index.js → ../../skills (package root + /skills)
+  const here = path.dirname(fileURLToPath(import.meta.url));
+  return path.resolve(here, '..', '..', 'skills');
+}
+
+export async function detectSkillsDrift(
+  skillsDir: string,
+  cwd = process.cwd(),
+): Promise<DriftEntry[]> {
   if (!existsSync(skillsDir)) return [];
 
-  const cwd = process.cwd();
   const agentsSkillsDir = path.join(cwd, '.agents', 'skills');
 
   const skillNames = (await readdir(skillsDir, { withFileTypes: true }))
@@ -45,7 +55,7 @@ export async function detectSkillsDrift(skillsDir: string): Promise<DriftEntry[]
 }
 
 export async function syncSkills(skillsDir: string, opts: SyncSkillsOptions = {}): Promise<void> {
-  const { dryRun = false } = opts;
+  const { dryRun = false, cwd = process.cwd() } = opts;
 
   if (!existsSync(skillsDir)) {
     throw new Error(
@@ -53,11 +63,10 @@ export async function syncSkills(skillsDir: string, opts: SyncSkillsOptions = {}
     );
   }
 
-  const cwd = process.cwd();
   const agentsSkillsDir = path.join(cwd, '.agents', 'skills');
   const claudeSkillsDir = path.join(cwd, '.claude', 'skills');
 
-  const results = await detectSkillsDrift(skillsDir);
+  const results = await detectSkillsDrift(skillsDir, cwd);
 
   if (results.length === 0) {
     process.stdout.write(chalk.yellow('No skills found to sync.\n'));

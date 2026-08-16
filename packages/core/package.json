@@ -16,6 +16,10 @@
       "types": "./dist/locale/index.d.ts",
       "import": "./dist/locale/index.js"
     },
+    "./cli": {
+      "types": "./dist/cli/index.d.ts",
+      "import": "./dist/cli/index.js"
+    },
     "./env": {
       "types": "./env.d.ts"
     }

@@ -7,6 +7,8 @@ import prompts from 'prompts';
 import { type InitOptions, init, isDirNonEmpty, sanitizeDirName } from './init.ts';
 import { detectPackageManager, PACKAGE_MANAGERS, type PackageManager } from './package-manager.ts';
 
+export { type InitOptions, init };
+
 async function readVersion(): Promise<string> {
   const here = dirname(fileURLToPath(import.meta.url));
   const pkg = JSON.parse(await readFile(join(here, '..', 'package.json'), 'utf8')) as {

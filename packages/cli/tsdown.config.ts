@@ -11,12 +11,13 @@ const corePkg = JSON.parse(readFileSync(resolve(here, '..', 'core', 'package.jso
 export default defineConfig({
   entry: {
     cli: 'src/cli.ts',
+    index: 'src/index.ts',
   },
   format: 'esm',
   target: 'node18',
   platform: 'node',
   clean: true,
-  dts: false,
+  dts: true,
   shims: false,
   define: {
     __CORE_VERSION_AT_BUILD__: JSON.stringify(corePkg.version),

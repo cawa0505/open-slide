@@ -1,0 +1,166 @@
+#!/usr/bin/env node
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import { init } from '@open-slide/cli';
+import {
+  build,
+  detectSkillsDrift,
+  exportHtml,
+  resolveBuiltinSkillsDir,
+  syncSkills,
+} from '@open-slide/core/cli';
+import { z } from 'zod';
+
+export function createServer(): McpServer {
+  const server = new McpServer({
+    name: 'open-slide',
+    version: '0.1.0',
+  });
+
+  server.registerTool(
+    'open_slide_init',
+    {
+      description: 'Scaffold a new open-slide slides workspace.',
+      inputSchema: {
+        dir: z
+          .string()
+          .optional()
+          .describe('Directory to scaffold into (default: current working directory)'),
+        force: z.boolean().optional().describe('Overwrite existing files'),
+        name: z.string().optional().describe('Project name'),
+        install: z.boolean().optional().describe('Install dependencies after scaffolding'),
+        git: z.boolean().optional().describe('Initialize a git repository'),
+        packageManager: z
+          .enum(['npm', 'pnpm', 'yarn', 'bun'])
+          .optional()
+          .describe('Package manager to use'),
+      },
+    },
+    async (args) => {
+      try {
+        const dir = path.resolve(args.dir ?? process.cwd());
+        await init({
+          dir,
+          force: args.force ?? false,
+          name: args.name,
+          install: args.install ?? true,
+          git: args.git ?? true,
+          packageManager: args.packageManager ?? 'npm',
+        });
+        return { content: [{ type: 'text', text: JSON.stringify({ ok: true, dir }) }] };
+      } catch (error) {
+        throw new Error(
+          `open_slide_init failed: ${error instanceof Error ? error.message : error}`,
+        );
+      }
+    },
+  );
+
+  server.registerTool(
+    'open_slide_build',
+    {
+      description: 'Build an open-slide workspace into a static SPA.',
+      inputSchema: {
+        cwd: z
+          .string()
+          .optional()
+          .describe('Workspace directory (default: current working directory)'),
+        outDir: z.string().optional().describe('Output directory (default: dist)'),
+      },
+    },
+    async (args) => {
+      try {
+        const cwd = args.cwd ?? process.cwd();
+        await build({ cwd, outDir: args.outDir });
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify({ ok: true, outDir: path.resolve(cwd, args.outDir ?? 'dist') }),
+            },
+          ],
+        };
+      } catch (error) {
+        throw new Error(
+          `open_slide_build failed: ${error instanceof Error ? error.message : error}`,
+        );
+      }
+    },
+  );
+
+  server.registerTool(
+    'open_slide_export_html',
+    {
+      description: 'Build an open-slide workspace and export a single self-contained HTML file.',
+      inputSchema: {
+        cwd: z
+          .string()
+          .optional()
+          .describe('Workspace directory (default: current working directory)'),
+        outFile: z.string().optional().describe('Output file path (default: export.html)'),
+      },
+    },
+    async (args) => {
+      try {
+        const { outFile } = await exportHtml({ cwd: args.cwd, outFile: args.outFile });
+        return { content: [{ type: 'text', text: JSON.stringify({ ok: true, outFile }) }] };
+      } catch (error) {
+        throw new Error(
+          `open_slide_export_html failed: ${error instanceof Error ? error.message : error}`,
+        );
+      }
+    },
+  );
+
+  server.registerTool(
+    'open_slide_sync_skills',
+    {
+      description:
+        'Sync built-in agent skills from @open-slide/core into the workspace (.agents/skills).',
+      inputSchema: {
+        cwd: z
+          .string()
+          .optional()
+          .describe('Workspace directory (default: current working directory)'),
+        dryRun: z.boolean().optional().describe('Report drift without writing files'),
+      },
+    },
+    async (args) => {
+      try {
+        const cwd = args.cwd ?? process.cwd();
+        const skillsDir = resolveBuiltinSkillsDir();
+        const drift = await detectSkillsDrift(skillsDir, cwd);
+        if (args.dryRun) {
+          return {
+            content: [{ type: 'text', text: JSON.stringify({ ok: true, dryRun: true, drift }) }],
+          };
+        }
+        await syncSkills(skillsDir, { cwd });
+        return { content: [{ type: 'text', text: JSON.stringify({ ok: true, drift }) }] };
+      } catch (error) {
+        throw new Error(
+          `open_slide_sync_skills failed: ${error instanceof Error ? error.message : error}`,
+        );
+      }
+    },
+  );
+
+  return server;
+}
+
+export async function main(): Promise<void> {
+  const server = createServer();
+  const transport = new StdioServerTransport();
+  await server.connect(transport);
+}
+
+const isEntry =
+  process.argv[1] !== undefined && fileURLToPath(import.meta.url) === path.resolve(process.argv[1]);
+if (isEntry) {
+  main().catch((error) => {
+    console.error(error);
+    process.exit(1);
+  });
+}

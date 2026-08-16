@@ -4,13 +4,15 @@ import { createViteConfig } from '../vite/config.ts';
 
 export interface BuildOptions {
   outDir?: string;
+  cwd?: string;
 }
 
 export async function build(opts: BuildOptions = {}): Promise<void> {
-  const base = await createViteConfig({ userCwd: process.cwd(), mode: 'build' });
+  const cwd = opts.cwd ?? process.cwd();
+  const base = await createViteConfig({ userCwd: cwd, mode: 'build' });
   const config = mergeConfig(base, {
     build: {
-      ...(opts.outDir !== undefined ? { outDir: path.resolve(process.cwd(), opts.outDir) } : {}),
+      ...(opts.outDir !== undefined ? { outDir: path.resolve(cwd, opts.outDir) } : {}),
     },
   });
   await viteBuild(config);

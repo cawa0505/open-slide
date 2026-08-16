@@ -4,7 +4,7 @@ import * as readline from 'node:readline/promises';
 import { fileURLToPath } from 'node:url';
 import chalk from 'chalk';
 import { Command, Option } from 'commander';
-import { detectSkillsDrift, syncSkills } from './sync.ts';
+import { detectSkillsDrift, resolveBuiltinSkillsDir, syncSkills } from './sync.ts';
 
 async function readVersion(): Promise<string> {
   const here = path.dirname(fileURLToPath(import.meta.url));
@@ -79,12 +79,6 @@ interface BuildFlags {
 
 interface SyncFlags {
   dryRun?: boolean;
-}
-
-function resolveBuiltinSkillsDir(): string {
-  // dist/cli/bin.js → ../../skills (package root + /skills)
-  const here = path.dirname(fileURLToPath(import.meta.url));
-  return path.resolve(here, '..', '..', 'skills');
 }
 
 export async function run(argv: string[]): Promise<void> {

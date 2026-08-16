@@ -1,0 +1,61 @@
+{
+  "name": "@open-slide/mcp",
+  "version": "0.1.0",
+  "description": "MCP server for open-slide — init, build, export, and sync skills in slides workspaces.",
+  "type": "module",
+  "bin": {
+    "open-slide-mcp": "./dist/index.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc --noEmit"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "slides",
+    "presentation",
+    "mcp",
+    "model-context-protocol"
+  ],
+  "license": "MIT",
+  "author": {
+    "name": "cawa0505",
+    "url": "https://github.com/cawa0505"
+  },
+  "homepage": "https://github.com/cawa0505/open-slide",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cawa0505/open-slide.git",
+    "directory": "packages/mcp"
+  },
+  "bugs": {
+    "url": "https://github.com/cawa0505/open-slide/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.9.0",
+    "@open-slide/cli": "workspace:*",
+    "@open-slide/core": "workspace:*",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.19.17",
+    "tsdown": "^0.9.9",
+    "typescript": "^5.9.3",
+    "vitest": "^2.1.9"
+  }
+}
