@@ -22,12 +22,17 @@ function emptyManifest(): FoldersManifest {
   return { folders: [], assignments: {} };
 }
 
+function normalizeFolder(f: Folder | string): Folder {
+  if (typeof f === 'string') return { id: f, name: f, icon: { type: 'color', value: '#9363bd' } };
+  return f;
+}
+
 export async function readManifest(file: string): Promise<FoldersManifest> {
   try {
     const raw = await fs.readFile(file, 'utf8');
     const parsed = JSON.parse(raw) as Partial<FoldersManifest>;
     return {
-      folders: Array.isArray(parsed.folders) ? parsed.folders : [],
+      folders: Array.isArray(parsed.folders) ? parsed.folders.map(normalizeFolder) : [],
       assignments:
         parsed.assignments && typeof parsed.assignments === 'object'
           ? (parsed.assignments as Record<string, string>)
