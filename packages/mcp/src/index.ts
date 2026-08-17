@@ -69,12 +69,16 @@ export function createServer(): McpServer {
           .optional()
           .describe('Workspace directory (default: current working directory)'),
         outDir: z.string().optional().describe('Output directory (default: dist)'),
+        base: z
+          .string()
+          .optional()
+          .describe('Base path for asset URLs (e.g. "/deck/")'),
       },
     },
     async (args) => {
       try {
         const cwd = args.cwd ?? process.cwd();
-        await build({ cwd, outDir: args.outDir });
+        await build({ cwd, outDir: args.outDir, base: args.base });
         return {
           content: [
             {
