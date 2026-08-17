@@ -7,23 +7,41 @@ import { createViteConfig } from '../vite/config.ts';
 export interface ExportHtmlOptions {
   cwd?: string;
   outFile?: string;
+  base?: string;
 }
 
 export async function exportHtml(opts: ExportHtmlOptions = {}): Promise<{ outFile: string }> {
   const cwd = opts.cwd ?? process.cwd();
   const tempDir = await mkdtemp(path.join(os.tmpdir(), 'open-slide-export-'));
   try {
-    const base = await createViteConfig({ userCwd: cwd, mode: 'build' });
-    const config = mergeConfig(base, {
+    const config = mergeConfig(await createViteConfig({ userCwd: cwd, mode: 'build' }), {
       build: {
         outDir: path.join(tempDir, 'dist'),
         // inline every asset as a data URL so nothing references emitted files
         assetsInlineLimit: Number.MAX_SAFE_INTEGER,
+        rollupOptions: {
+          output: {
+            inlineDynamicImports: true,
+          },
+        },
       },
     });
+    // override base after merge — mergeConfig does not always override it
+    if (opts.base !== undefined) {
+      config.base = opts.base;
+    } else {
+      config.base = '/';
+    }
     await viteBuild(config);
     const outFile = path.resolve(cwd, opts.outFile ?? 'export.html');
-    await writeFile(outFile, await inlineAssets(path.join(tempDir, 'dist')));
+    let html = await inlineAssets(path.join(tempDir, 'dist'));
+    // prepend a script that resets the URL pathname to "/" before the SPA initializes
+    // so that the SPA's client-side router doesn't try to match the export file's path
+    html = html.replace(
+      '<head>',
+      '<head><script>history.replaceState(null,"","/")</script>',
+    );
+    await writeFile(outFile, html);
     return { outFile };
   } finally {
     await rm(tempDir, { recursive: true, force: true });
@@ -49,6 +67,11 @@ async function inlineAssets(outDir: string): Promise<string> {
   return html;
 }
 
+/** Strip leading slash so path.join produces a correct relative path. */
+function relPath(outDir: string, file: string): string {
+  return path.join(outDir, file.startsWith('/') ? file.slice(1) : file);
+}
+
 async function inlineBundles(html: string, outDir: string): Promise<string> {
   const scripts = html.match(/<script\b(?=[^>]*\bsrc=")[^>]*>[\s\S]*?<\/script>/g) ?? [];
   const styles = html.match(/<link\b(?=[^>]*\brel="stylesheet")[^>]*>/g) ?? [];
@@ -56,7 +79,7 @@ async function inlineBundles(html: string, outDir: string): Promise<string> {
   for (const tag of scripts) {
     const file = tag.match(/\bsrc="([^"]+)"/)?.[1];
     if (!file) continue;
-    const content = await readFile(path.join(outDir, file), 'utf8');
+    const content = await readFile(relPath(outDir, file), 'utf8');
     // replacement function: a string replacement would re-interpret `$&`/`$'`/`$$` inside the bundle
     result = result.replace(
       tag,
@@ -66,7 +89,7 @@ async function inlineBundles(html: string, outDir: string): Promise<string> {
   for (const tag of styles) {
     const file = tag.match(/\bhref="([^"]+)"/)?.[1];
     if (!file) continue;
-    const content = await readFile(path.join(outDir, file), 'utf8');
+    const content = await readFile(relPath(outDir, file), 'utf8');
     result = result.replace(tag, () => `<style>${escapeClosingTag(content)}</style>`);
   }
   return result;
@@ -81,7 +104,7 @@ async function inlineResidualRefs(html: string, outDir: string): Promise<string>
     const ext = path.extname(ref).toLowerCase();
     const mime = MIME_BY_EXT[ext];
     if (!mime) continue;
-    const content = await readFile(path.join(outDir, ref)).catch(() => null);
+    const content = await readFile(relPath(outDir, ref)).catch(() => null);
     if (content === null) continue;
     const data =
       mime.startsWith('text/') || ext === '.svg'

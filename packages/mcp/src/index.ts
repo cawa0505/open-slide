@@ -105,11 +105,15 @@ export function createServer(): McpServer {
           .optional()
           .describe('Workspace directory (default: current working directory)'),
         outFile: z.string().optional().describe('Output file path (default: export.html)'),
+        base: z
+          .string()
+          .optional()
+          .describe('Base path for asset URLs (e.g. "/deck/")'),
       },
     },
     async (args) => {
       try {
-        const { outFile } = await exportHtml({ cwd: args.cwd, outFile: args.outFile });
+        const { outFile } = await exportHtml({ cwd: args.cwd, outFile: args.outFile, base: args.base });
         return { content: [{ type: 'text', text: JSON.stringify({ ok: true, outFile }) }] };
       } catch (error) {
         throw new Error(
