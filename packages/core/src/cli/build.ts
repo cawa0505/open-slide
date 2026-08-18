@@ -43,10 +43,7 @@ async function injectRouteBootstrap(indexHtml: string, route: string): Promise<v
     return; // already injected (idempotent)
   }
   const script = `<script>${marker}</script>`;
-  const updated = html.replace(
-    /<script type="module"/,
-    `${script}\n    <script type="module"`,
-  );
+  const updated = html.replace(/<script type="module"/, `${script}\n    <script type="module"`);
   if (updated === html) {
     throw new Error(`route injection failed: no module script tag found in ${indexHtml}`);
   }

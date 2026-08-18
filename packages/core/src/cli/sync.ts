@@ -36,21 +36,28 @@ export async function detectSkillsDrift(
     .map((e) => e.name)
     .sort();
 
-  const results: DriftEntry[] = [];
-  for (const name of skillNames) {
-    const src = path.join(skillsDir, name);
-    const dst = path.join(agentsSkillsDir, name);
+  const results: DriftEntry[] = await Promise.all(
+    skillNames.map(async (name) => {
+      const src = path.join(skillsDir, name);
+      const dst = path.join(agentsSkillsDir, name);
 
-    const srcHash = await hashDir(src);
-    const dstHash = existsSync(dst) ? await hashDir(dst) : null;
+      if (!existsSync(dst)) return { name, status: 'added' as Status };
 
-    let status: Status;
-    if (dstHash === null) status = 'added';
-    else if (dstHash !== srcHash) status = 'updated';
-    else status = 'unchanged';
+      // ponytail: quick size check before expensive SHA256
+      const srcStat = await lstat(src);
+      const dstStat = await lstat(dst);
+      if (srcStat.size === dstStat.size) {
+        const srcHash = await hashDir(src);
+        const dstHash = await hashDir(dst);
+        return {
+          name,
+          status: srcHash === dstHash ? ('unchanged' as Status) : ('updated' as Status),
+        };
+      }
+      return { name, status: 'updated' as Status };
+    }),
+  );
 
-    results.push({ name, status });
-  }
   return results;
 }
 

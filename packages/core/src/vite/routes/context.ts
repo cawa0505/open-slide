@@ -36,7 +36,8 @@ export function makeContext(opts: ApiPluginOptions): ApiContext {
   };
 }
 
-export async function readBody(req: Connect.IncomingMessage): Promise<unknown> {
+// ponytail: constrain parse result — all callers expect objects
+export async function readBody(req: Connect.IncomingMessage): Promise<Record<string, unknown>> {
   return await new Promise((resolve, reject) => {
     const chunks: Buffer[] = [];
     req.on('data', (c: Buffer) => chunks.push(c));
@@ -44,7 +45,12 @@ export async function readBody(req: Connect.IncomingMessage): Promise<unknown> {
       const raw = Buffer.concat(chunks).toString('utf8');
       if (!raw) return resolve({});
       try {
-        resolve(JSON.parse(raw));
+        const parsed = JSON.parse(raw);
+        if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+          reject(new Error('expected JSON object'));
+          return;
+        }
+        resolve(parsed as Record<string, unknown>);
       } catch (e) {
         reject(e);
       }

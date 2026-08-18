@@ -289,7 +289,8 @@ export function registerAssetRoutes(server: ViteDevServer, ctx: ApiContext): voi
 
       return next();
     } catch (err) {
-      json(res, 500, { error: String((err as Error).message ?? err) });
+      const e = err as Error;
+      json(res, 500, { error: e.message ?? String(err), stack: e.stack });
     }
   });
 }

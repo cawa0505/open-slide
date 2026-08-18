@@ -14,6 +14,11 @@ import {
 } from '@open-slide/core/cli';
 import { z } from 'zod';
 
+// ponytail: shared error wrapper for MCP tool handlers
+function toolError(toolName: string, error: unknown): never {
+  throw new Error(`${toolName} failed: ${error instanceof Error ? error.message : error}`);
+}
+
 export function createServer(): McpServer {
   const server = new McpServer({
     name: 'open-slide',
@@ -52,9 +57,7 @@ export function createServer(): McpServer {
         });
         return { content: [{ type: 'text', text: JSON.stringify({ ok: true, dir }) }] };
       } catch (error) {
-        throw new Error(
-          `open_slide_init failed: ${error instanceof Error ? error.message : error}`,
-        );
+        toolError('open_slide_init', error);
       }
     },
   );
@@ -69,14 +72,13 @@ export function createServer(): McpServer {
           .optional()
           .describe('Workspace directory (default: current working directory)'),
         outDir: z.string().optional().describe('Output directory (default: dist)'),
-        base: z
-          .string()
-          .optional()
-          .describe('Base path for asset URLs (e.g. "/deck/")'),
+        base: z.string().optional().describe('Base path for asset URLs (e.g. "/deck/")'),
         route: z
           .string()
           .optional()
-          .describe('SPA route to force at load (e.g. "/deck/s/slide-id"). Injects history.replaceState into built index.html so subdirectory-deployed decks boot into the presentation.'),
+          .describe(
+            'SPA route to force at load (e.g. "/deck/s/slide-id"). Injects history.replaceState into built index.html so subdirectory-deployed decks boot into the presentation.',
+          ),
       },
     },
     async (args) => {
@@ -92,9 +94,7 @@ export function createServer(): McpServer {
           ],
         };
       } catch (error) {
-        throw new Error(
-          `open_slide_build failed: ${error instanceof Error ? error.message : error}`,
-        );
+        toolError('open_slide_build', error);
       }
     },
   );
@@ -109,20 +109,19 @@ export function createServer(): McpServer {
           .optional()
           .describe('Workspace directory (default: current working directory)'),
         outFile: z.string().optional().describe('Output file path (default: export.html)'),
-        base: z
-          .string()
-          .optional()
-          .describe('Base path for asset URLs (e.g. "/deck/")'),
+        base: z.string().optional().describe('Base path for asset URLs (e.g. "/deck/")'),
       },
     },
     async (args) => {
       try {
-        const { outFile } = await exportHtml({ cwd: args.cwd, outFile: args.outFile, base: args.base });
+        const { outFile } = await exportHtml({
+          cwd: args.cwd,
+          outFile: args.outFile,
+          base: args.base,
+        });
         return { content: [{ type: 'text', text: JSON.stringify({ ok: true, outFile }) }] };
       } catch (error) {
-        throw new Error(
-          `open_slide_export_html failed: ${error instanceof Error ? error.message : error}`,
-        );
+        toolError('open_slide_export_html', error);
       }
     },
   );
@@ -153,9 +152,7 @@ export function createServer(): McpServer {
         await syncSkills(skillsDir, { cwd });
         return { content: [{ type: 'text', text: JSON.stringify({ ok: true, drift }) }] };
       } catch (error) {
-        throw new Error(
-          `open_slide_sync_skills failed: ${error instanceof Error ? error.message : error}`,
-        );
+        toolError('open_slide_sync_skills', error);
       }
     },
   );

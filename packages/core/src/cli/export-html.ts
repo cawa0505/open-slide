@@ -37,10 +37,7 @@ export async function exportHtml(opts: ExportHtmlOptions = {}): Promise<{ outFil
     let html = await inlineAssets(path.join(tempDir, 'dist'));
     // prepend a script that resets the URL pathname to "/" before the SPA initializes
     // so that the SPA's client-side router doesn't try to match the export file's path
-    html = html.replace(
-      '<head>',
-      '<head><script>history.replaceState(null,"","/")</script>',
-    );
+    html = html.replace('<head>', '<head><script>history.replaceState(null,"","/")</script>');
     await writeFile(outFile, html);
     return { outFile };
   } finally {
