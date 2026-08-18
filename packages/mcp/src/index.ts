@@ -73,12 +73,16 @@ export function createServer(): McpServer {
           .string()
           .optional()
           .describe('Base path for asset URLs (e.g. "/deck/")'),
+        route: z
+          .string()
+          .optional()
+          .describe('SPA route to force at load (e.g. "/deck/s/slide-id"). Injects history.replaceState into built index.html so subdirectory-deployed decks boot into the presentation.'),
       },
     },
     async (args) => {
       try {
         const cwd = args.cwd ?? process.cwd();
-        await build({ cwd, outDir: args.outDir, base: args.base });
+        await build({ cwd, outDir: args.outDir, base: args.base, route: args.route });
         return {
           content: [
             {
