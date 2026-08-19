@@ -21,8 +21,10 @@ const SLIDES_VMOD = 'virtual:open-slide/slides';
 const CONFIG_VMOD = 'virtual:open-slide/config';
 const FOLDERS_VMOD = 'virtual:open-slide/folders';
 
+type Folder = { id: string; name: string; icon: { type: string; value: string } };
+
 type FoldersManifest = {
-  folders: unknown[];
+  folders: Folder[];
   assignments: Record<string, string>;
 };
 

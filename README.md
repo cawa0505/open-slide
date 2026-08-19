@@ -10,7 +10,7 @@ The deck runtime itself is unchanged upstream — this branch tracks [upstream `
 
 ## 🤖 MCP tools
 
-Expose slide automation to any MCP client (Claude Code, Cursor, …) via stdio.
+Expose slide automation to any MCP client (Claude Code, Cursor, …) via stdio or authenticated HTTP.
 
 | Tool | Description |
 | --- | --- |
@@ -40,6 +40,20 @@ pnpm mcp:install
   }
 }
 ```
+
+### Remote server
+
+Run the MCP server over Streamable HTTP when the client and slide workspace are on different machines. The server requires a bearer token, an explicit workspace root, and a public base URL for preview and artifact links:
+
+```bash
+OPEN_SLIDE_REMOTE_TOKEN='replace-me' \
+OPEN_SLIDE_PUBLIC_BASE_URL='https://slides.example.com' \
+OPEN_SLIDE_WORKSPACE_ROOT='/workspace/slides' \
+OPEN_SLIDE_REMOTE_PORT=3100 \
+open-slide-mcp
+```
+
+Put the service behind HTTPS and inject the token through the MCP client's `Authorization: Bearer ...` header. Remote filesystem paths are restricted to `OPEN_SLIDE_WORKSPACE_ROOT`; preview sessions and downloadable artifacts expire automatically. The normal `open_slide_build` result remains a complete `dist/` directory, while `open_slide_export_html` can return a self-contained HTML artifact.
 
 ### Example agent flow
 
