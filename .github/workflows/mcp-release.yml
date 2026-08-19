@@ -1,0 +1,54 @@
+name: MCP Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Tag to create/update'
+        required: false
+        default: 'mcp/v1.0.0'
+        type: string
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build all packages
+        run: pnpm -r build
+
+      - name: Deploy MCP package
+        run: pnpm deploy --prod --legacy --filter @open-slide/mcp /tmp/osmcp-deploy
+
+      - name: Sanity check deploy directory
+        run: |
+          test -f /tmp/osmcp-deploy/dist/index.js || { echo "ERROR: dist/index.js missing"; exit 1; }
+          test -d /tmp/osmcp-deploy/node_modules/@open-slide/core/skills || { echo "ERROR: @open-slide/core/skills directory missing"; exit 1; }
+
+      - name: Create zstd tarball
+        run: tar --zstd -cf open-slide-mcp-linux-x64.tar.zst -C /tmp osmcp-deploy
+
+      - name: Upload release asset
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ inputs.release_tag }}
+          files: open-slide-mcp-linux-x64.tar.zst
+          make_latest: false
