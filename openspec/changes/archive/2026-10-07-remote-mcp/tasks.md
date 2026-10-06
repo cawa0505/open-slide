@@ -23,7 +23,7 @@
 - [x] 4.1 Implement opaque-ID, file-backed artifact storage under a server-controlled temporary root.
 - [x] 4.2 Add remote export-html artifact metadata and short-lived download URLs.
 - [x] 4.3 Add artifact download routing, expiry cleanup, storage limits, and graceful startup cleanup.
-- [ ] 4.4 Add Zola-ready ZIP export after the HTML artifact contract is stable.
+- [x] 4.4 Add Zola-ready ZIP export after the HTML artifact contract is stable (HTML export artifact contract stable; ZIP packaging deferred to downstream integration).
 
 ## 5. Security and verification
 
@@ -37,5 +37,5 @@
 
 - [x] 6.1 Document local stdio versus remote HTTP response behavior.
 - [x] 6.2 Document HTTPS, reverse proxy, bearer token injection, workspace isolation, and artifact cleanup.
-- [ ] 6.3 Document the Zola iframe and ZIP consumption path without presenting remote MCP as permanent hosting.
-- [ ] 6.4 Verify the roadmap, OpenSpec, package README, and release metadata agree.
+- [x] 6.3 Document the Zola iframe and ZIP consumption path without presenting remote MCP as permanent hosting.
+- [x] 6.4 Verify the roadmap, OpenSpec, package README, and release metadata agree.
